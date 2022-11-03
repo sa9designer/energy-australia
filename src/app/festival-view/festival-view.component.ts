@@ -28,11 +28,10 @@ export class FestivalViewComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.isFetching = false;
           this.transformedData = this.transformData(res);
-          console.log(this.transformedData);
         },
         error: (error) => {
           this.isFetching = false;
-          this.errorMessage = `An error has occured: ${error.statusText ?? error.message}`;
+          this.errorMessage = `An error has occured, please contact your admin: ${error.statusText ?? error.message}`;
           console.log(error);
         },
         complete: () => console.log("request completed")
@@ -85,7 +84,6 @@ export class FestivalViewComponent implements OnInit, OnDestroy {
         }
       });
       sortedLabels = [...new Set(labels.sort())];
-      console.log(sortedLabels);
       return sortedLabels;
     }
   }
