@@ -8,9 +8,8 @@ describe('FestivalViewComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ FestivalViewComponent ]
-    })
-    .compileComponents();
+      declarations: [FestivalViewComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {

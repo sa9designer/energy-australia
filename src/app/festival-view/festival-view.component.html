@@ -1,16 +1,18 @@
 <main class="container festival-info">
   <h1>Music Festival</h1>
   <hr />
-  <div class="festival-info-loading" *ngIf="isFetching"></div>
-  <div class="festival-info-list" *ngIf="transformedData && transformedData.length > 0; else error">
+  <div class="festival-info-loading" *ngIf="loading$ | async"></div>
+  <div class="festival-info-list" *ngIf="transformedData?.length > 0; else error">
     <div *ngFor="let item of transformedData">
       <h3>Label: {{ item?.recordLabel?.name }}</h3>
-      <ul *ngFor="let band of item.recordLabel.bandDetails">
-        <li>Band name: {{ band.name }}</li>
-        <li>
+      <div *ngFor="let band of item.recordLabel.bandDetails">
+        <p>
+          <span *ngFor="let b of band.bands">Band name: {{ b }}</span>
+        </p>
+        <p>
           Festivals: <span *ngFor="let festival of band.festivals">{{ festival }}</span>
-        </li>
-      </ul>
+        </p>
+      </div>
     </div>
   </div>
   <ng-template #error>

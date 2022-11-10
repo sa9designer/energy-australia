@@ -1,17 +1,17 @@
-import { Component, OnInit, ChangeDetectionStrategy, OnDestroy } from "@angular/core";
-import { FestivalService } from "../festival.service";
-import { Subject } from "rxjs";
-import { takeUntil } from "rxjs/operators";
-import { MusicFestival, Band, RecordLabel, Festival } from "./festival-view.model";
+import { Component, OnInit, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
+import { FestivalService } from '../festival.service';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { finalize, take, takeUntil } from 'rxjs/operators';
+import { MusicFestival, Band, RecordLabel, Festival } from './festival-view.model';
 @Component({
-  selector: "app-festival-view",
-  templateUrl: "./festival-view.component.html",
-  styleUrls: ["./festival-view.component.scss"]
+  selector: 'app-festival-view',
+  templateUrl: './festival-view.component.html',
+  styleUrls: ['./festival-view.component.scss'],
 })
 export class FestivalViewComponent implements OnInit, OnDestroy {
   constructor(private festivalService: FestivalService) {}
-  private subscription = new Subject<void>();
-  isFetching: boolean;
+  subscription$ = new Subject<void>();
+  readonly loading$ = new BehaviorSubject<boolean>(false);
   transformedData: RecordLabel[];
   errorMessage: string;
   uniqueLabels: string[];
@@ -19,22 +19,24 @@ export class FestivalViewComponent implements OnInit, OnDestroy {
     this.getFestivalData();
   }
 
-  private getFestivalData() {
-    this.isFetching = true;
+  getFestivalData() {
+    this.loading$.next(true);
     this.festivalService
       .getFestivalData()
-      .pipe(takeUntil(this.subscription))
+      .pipe(
+        takeUntil(this.subscription$),
+        finalize(() => {
+          this.loading$.next(false);
+          this.loading$.complete();
+        })
+      )
       .subscribe({
         next: (res) => {
-          this.isFetching = false;
           this.transformedData = this.transformData(res);
         },
         error: (error) => {
-          this.isFetching = false;
           this.errorMessage = `An error has occured, please contact your admin: ${error.statusText ?? error.message}`;
-          console.log(error);
         },
-        complete: () => console.log("request completed")
       });
   }
 
@@ -46,8 +48,8 @@ export class FestivalViewComponent implements OnInit, OnDestroy {
         newData.push({
           recordLabel: {
             name: sl,
-            bandDetails: this.getBandDetails(dto, sl)
-          }
+            bandDetails: this.getBandDetails(dto, sl),
+          },
         });
       });
     }
@@ -55,26 +57,32 @@ export class FestivalViewComponent implements OnInit, OnDestroy {
   }
 
   getBandDetails(data: MusicFestival[], label: string): Festival[] {
-    const bands: Festival[] = [];
-    if (data?.length > 0) {
+    const festivalData: Festival[] = [];
+    if (!data?.length) {
+      return [];
+    } else {
       data.forEach((dt) => {
-        dt.bands.forEach((b) => {
-          if (b.recordLabel === label && dt.name) {
-            bands.push({
-              name: b.name,
-              festivals: [...dt.name]
-            });
-          }
-        });
+        dt.bands?.length > 0
+          ? dt.bands.forEach((b) => {
+              if (b.recordLabel === label) {
+                festivalData.push({
+                  bands: [b.name],
+                  festivals: dt.name,
+                });
+              }
+            })
+          : null;
       });
+      return festivalData;
     }
-    return bands;
   }
 
-  getUniqueRecordLabels(data: MusicFestival[]) {
+  getUniqueRecordLabels(data: MusicFestival[]): string[] {
     const labels = [];
     let sortedLabels;
-    if (data?.length > 0) {
+    if (!data?.length) {
+      return [];
+    } else {
       data.forEach((dt) => {
         if (dt.bands?.length > 0) {
           const filteredData = dt.bands.filter((b) => !!b.recordLabel);
@@ -89,7 +97,7 @@ export class FestivalViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.subscription.next();
-    this.subscription.complete();
+    this.subscription$.next();
+    this.subscription$.complete();
   }
 }

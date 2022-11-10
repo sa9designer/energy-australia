@@ -15,6 +15,6 @@ export interface RecordLabel {
   };
 }
 export interface Festival {
-  name: string;
-  festivals: string[];
+  bands: string[];
+  festivals: string;
 }
